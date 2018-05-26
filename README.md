@@ -4,6 +4,18 @@ A Bot that can create webm spoiler with text or image as source.
 ## Invite the Bot
 **[InviteMe](https://discordapp.com/api/oauth2/authorize?client_id=449931152095182850&permissions=108544&scope=bot)**
 
+## Usage
+Text Example:
+```
+>>spoiler "Title Lorem" -t "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore."
+```
+
+Image Example:
+```
+>>spoiler "Title Image" -i
+[Image as attachment]
+```
+
 ## Self Host Usage
 
 Start with installing the dependencies through ``pip``.
