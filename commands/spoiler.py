@@ -11,7 +11,7 @@ from utils.handle_messages import send_message, delete_message
 
 
 FONT_PATH = config.MAIN.font
-CHAR_WIDTH = 28.24  # for OpenSans 55
+CHAR_WIDTH = 30.24  # for OpenSans 55 (value+2)
 CHAR_HEIGHT = 62  # for OpenSans 55
 TEST_WIDTH = 1920
 RATIO = 1.35  # 1920x1420
@@ -23,7 +23,8 @@ ffmpeg_generate_height = """-loglevel error
 -vf drawtext=\
 fontsize=55\
 :fontfile={font}\
-:text='%{{eif\\:print(th,16)\\:}}{user_text}'
+:text='%{{eif\\:print(th,16)\\:}}{user_text}\
+:x={pad}:y={pad}'
 -f null
 -""".replace("\n", " ")
 
@@ -132,7 +133,7 @@ def spoiler_create(header, content, tmp_path):
     # determine required height and surface
     char_count = int(TEST_WIDTH / CHAR_WIDTH)
     text = split_spoiler_lines(content, char_count)
-    cmd = [x.format(user_text=text, font=FONT_PATH) for x in ffmpeg_generate_height.split(" ")]
+    cmd = [x.format(user_text=text, font=FONT_PATH, pad=PADDING) for x in ffmpeg_generate_height.split(" ")]
     ffmpeg_output = subprocess.run(["ffmpeg"] + cmd, universal_newlines=True, stderr=subprocess.PIPE)
     test_height = float(ffmpeg_output.stderr.split()[1])
     surface = TEST_WIDTH * test_height
