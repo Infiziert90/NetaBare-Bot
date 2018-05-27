@@ -55,7 +55,6 @@ async def handle_commands(message):
     try:
         args = parser.parse_args(arg_string)
     except HelpException as err:
-        await delete_message(message)
         return await send_message(message.author, f"```{str(err)}```")
     except (UnkownCommandException, argparse.ArgumentError) as err:
         if arg_string[0] in dispatcher.commands:
