@@ -69,6 +69,10 @@ enable='between(t,0,0.5)'\
 {out_path}/spoiler.webm""".replace("\n", " ")
 
 
+class ImageFailed(BaseException):
+    pass
+
+
 def replace_chars(text):
     text = text.replace("  ", " ")
     text = text.replace("„", "“")
@@ -193,7 +197,7 @@ async def check_message(message):
         await send_message(message.author, "Picture height is too small.")
     else:
         return True
-    return False
+    raise ImageFailed
 
 
 @register_command('spoiler', description='Create webm with spoiler warning.')
@@ -201,30 +205,30 @@ async def check_message(message):
 @add_argument('-t', '--text', help='Spoiler text.')
 @add_argument('-i', '--image', action="store_true", help='Spoiler image [attachment].')
 async def spoiler(_, message, args):
-    tmp_path_dir = tempfile.TemporaryDirectory()
-    tmp_path = tmp_path_dir.name
-    if args.image:
-        img_url = message.attachments[0].url
-        filename = message.attachments[0].filename
-        image = await get_file(img_url, tmp_path, filename)
-        if image is None:
-            send_message(message.author, content="Can't load image. Pls try it again later.")
+    try:
+        tmp_path_dir = tempfile.TemporaryDirectory()
+        tmp_path = tmp_path_dir.name
+        await send_message(message.author, content=f"```{message.content}```")
+        spoiler_title = f"Spoiler: {args.title} (by {message.author.display_name})"
+        content = f"**Spoiler: {args.title}** (by <@!{message.author.id}>)"
 
-    await send_message(message.author, content=f"```{message.content}```")
-    spoiler_title = f"Spoiler: {args.title} (by {message.author.display_name})"
-    content = f"**Spoiler: {args.title}** (by <@!{message.author.id}>)"
+        if args.image and await check_message(message):
+            img_url = message.attachments[0].url
+            filename = message.attachments[0].filename
+            width = message.attachments[0].width
+            height = message.attachments[0].height
+            image = await get_file(img_url, tmp_path, filename)
+            if image is None:
+                return await send_message(message.author, content="Can't load image. Pls try it again later.")
+            check = spoiler_image(spoiler_title, image, width, height, tmp_path)
+        else:
+            check = spoiler_create(spoiler_title, args.text, tmp_path)
 
-    if args.image:
-        await check_message(message)
-        width = message.attachments[0].width
-        height = message.attachments[0].height
-        check = spoiler_image(spoiler_title, image, width, height, tmp_path)
-    else:
-        check = spoiler_create(spoiler_title, args.text, tmp_path)
-
-    await delete_message(message)
-
-    if check:
-        await send_message(message.channel, content=content, file=discord.File(f'{tmp_path}/spoiler.webm'))
-    else:
-        await send_message(message.author, content="Text is to long.")
+        if check:
+            await send_message(message.channel, content=content, file=discord.File(f'{tmp_path}/spoiler.webm'))
+        else:
+            await send_message(message.author, content="Text is to long.")
+    except ImageFailed:
+        pass
+    finally:
+        await delete_message(message)
