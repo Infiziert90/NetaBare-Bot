@@ -6,10 +6,11 @@ import tempfile
 import itertools
 import subprocess
 from config import config
-from cmd_manager.decorators import register_command, add_argument
+from cmd_manager.decorators import register_command, add_argument, add_group
 from utils.handle_messages import send_message, delete_message
 
-
+tmp_path_dir = tempfile.TemporaryDirectory()
+tmp_path = tmp_path_dir.name
 FONT_PATH = config.MAIN.font
 CHAR_WIDTH = 30.24  # for OpenSans 55 (value+2)
 CHAR_HEIGHT = 62  # for OpenSans 55
@@ -174,11 +175,12 @@ def spoiler_image(header, image, width, height, tmp_path):
     return True
 
 
-async def get_file(url, path, filename):
+async def get_file(url, path, filename, message):
     with aiohttp.ClientSession() as sess:
         async with sess.get(url) as resp:
             if resp.status != 200:
                 return None
+            await delete_message(message)
             with open(f"{path}/{filename}", 'wb') as f:
                 f.write(await resp.read())
             return f"{path}/{filename}"
@@ -202,24 +204,26 @@ async def check_message(message):
 
 @register_command('spoiler', description='Create webm with spoiler warning.')
 @add_argument('title', help='Spoiler title.')
-@add_argument('-t', '--text', help='Spoiler text.')
-@add_argument('-i', '--image', action="store_true", help='Spoiler image [attachment].')
+@add_group('-t', '--text', help='Spoiler text.')
+@add_group('-i', '--image', action="store_true", help='Spoiler image [attachment].')
 async def spoiler(_, message, args):
     try:
-        tmp_path_dir = tempfile.TemporaryDirectory()
-        tmp_path = tmp_path_dir.name
-        await send_message(message.author, content=f"```{message.content}```")
-        spoiler_title = f"Spoiler: {args.title} (by {message.author.display_name})"
-        content = f"**Spoiler: {args.title}** (by <@!{message.author.id}>)"
-
+        image = None
         if args.image and await check_message(message):
             img_url = message.attachments[0].url
             filename = message.attachments[0].filename
             width = message.attachments[0].width
             height = message.attachments[0].height
-            image = await get_file(img_url, tmp_path, filename)
+            image = await get_file(img_url, tmp_path, filename, message=message)
             if image is None:
-                return await send_message(message.author, content="Can't load image. Pls try it again later.")
+                return await send_message(message, "Can't load image. Pls try it again later.")
+
+        await delete_message(message)
+        await send_message(message.author, content=f"```{message.content}```")
+        spoiler_title = f"Spoiler: {args.title} (by {message.author.display_name})"
+        content = f"**Spoiler: {args.title}** (by <@!{message.author.id}>)"
+
+        if image is not None:
             check = spoiler_image(spoiler_title, image, width, height, tmp_path)
         else:
             check = spoiler_create(spoiler_title, args.text, tmp_path)
@@ -227,7 +231,7 @@ async def spoiler(_, message, args):
         if check:
             await send_message(message.channel, content=content, file=discord.File(f'{tmp_path}/spoiler.webm'))
         else:
-            await send_message(message.author, content="Text is to long.")
+            await send_message(message.author, content="Title/Text is too short/long.")
     except ImageFailed:
         pass
     finally:

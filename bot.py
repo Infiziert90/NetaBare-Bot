@@ -1,6 +1,7 @@
 import shlex
 import aiohttp
 import discord
+import discord.ext
 import logging
 import argparse
 import commands
@@ -12,10 +13,13 @@ from utils.handle_messages import send_message, delete_message
 
 client = discord.Client()
 commands.load_commands()
-
+first_time = True
 
 @client.event
 async def on_ready():
+    global first_time
+    if first_time:
+        first_time = False
     logging.info(f'Logged in as\nUsername: {client.user.name}\nID: {client.user.id}\nAPI Version: {discord.__version__}')
     gameplayed = discord.Game(name=config.MAIN.get("gameplayed", "Awaiting Spoiler"))
     await client.change_presence(activity=gameplayed)
@@ -42,6 +46,9 @@ async def handle_commands(message):
     if not message.content.startswith(">>"):
         return
 
+    if len(message.content) == 2:
+        return
+
     today = datetime.datetime.today().strftime("%a %d %b %H:%M:%S")
     logging.info(f"Date: {today} User: {message.author} Server: {server_name} Channel: {channel_name} "
                  f"Command: {message.content[:50]}")
@@ -57,6 +64,8 @@ async def handle_commands(message):
     except HelpException as err:
         return await send_message(message.author, f"```{str(err)}```")
     except (UnkownCommandException, argparse.ArgumentError) as err:
+        if arg_string[0] == "spoiler":
+            await delete_message(message)
         if arg_string[0] in dispatcher.commands:
             return await send_message(message.author, f"```{str(err)}```")
         return
