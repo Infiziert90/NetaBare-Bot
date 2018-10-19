@@ -216,7 +216,7 @@ async def spoiler(_, message, args):
             height = message.attachments[0].height
             image = await get_file(img_url, tmp_path, filename, message=message)
             if image is None:
-                return await send_message(message, "Can't load image. Pls try it again later.")
+                return await send_message(message.author, "Can't load image. Pls try it again later.")
 
         await delete_message(message)
         await send_message(message.author, content=f"```{message.content}```")

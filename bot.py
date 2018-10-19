@@ -13,13 +13,9 @@ from utils.handle_messages import send_message, delete_message
 
 client = discord.Client()
 commands.load_commands()
-first_time = True
 
 @client.event
 async def on_ready():
-    global first_time
-    if first_time:
-        first_time = False
     logging.info(f'Logged in as\nUsername: {client.user.name}\nID: {client.user.id}\nAPI Version: {discord.__version__}')
     gameplayed = discord.Game(name=config.MAIN.get("gameplayed", "Awaiting Spoiler"))
     await client.change_presence(activity=gameplayed)
