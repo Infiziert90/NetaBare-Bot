@@ -176,7 +176,7 @@ def spoiler_image(header, image, width, height, tmp_path):
 
 
 async def get_file(url, path, filename, message):
-    with aiohttp.ClientSession() as sess:
+    async with aiohttp.ClientSession() as sess:
         async with sess.get(url) as resp:
             if resp.status != 200:
                 return None
