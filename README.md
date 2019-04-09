@@ -1,8 +1,8 @@
 # NetaBare-Bot
 A Bot that can create webm spoiler with text or image as source.
 
-## Invite the Bot
-**[InviteMe](https://discordapp.com/api/oauth2/authorize?client_id=449931152095182850&permissions=108544&scope=bot)**
+# Inactive
+Discord added spoiler directly into the chat, so the bot is not needed anymore.
 
 ## Usage
 Text Example:
